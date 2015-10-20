@@ -81,6 +81,26 @@ def post_to_slack(url, channel, snapshot, prefix):
     reqh = urllib2.urlopen(req)
     reqh.close()
 
+def post_to_flowdock(token, snapshot, prefix):
+    try:
+        import requests
+    except:
+        print 'Missing requests library needed by flowdock ... silenty ignoring'
+        return
+
+    f = facter.Facter()
+    username = f.lookup('cfn_stack_name').replace('-', ' '),
+
+    msg = 'Started Elasticsearch restore of snapshot "%s" (from "%s") into stack "%s"\n' % (snapshot, prefix, f.lookup('cfn_stack_name'))
+    msg = msg + 'You will not be able to connect to Elasticsearch for a little while while the restore is happening.'
+
+    try:
+        r = requests.post("https://api.flowdock.com/messages/chat/" + token, data={'content': msg, 'event': 'comment', 'external_user_name': username})
+        if r.status_code != 200:
+            print 'Problem while posting to flowdock. Verify the token'
+    except e:
+            print 'error while posting to flowdock ' + e.msg
+
 if __name__ == '__main__':
     description = """This script will restore a snapshot into ES running on localhost:9200 (by default)"""
     parser = argparse.ArgumentParser(description=description)
@@ -92,6 +112,7 @@ if __name__ == '__main__':
     parser.add_argument("--list", action="store_true", help="List snapshots")
     parser.add_argument("--repository", action="store", default="restore_from", help="Repository name to use in Elasticsearch")
     parser.add_argument("--slackurl", action="store", help="Slack URL to post to on success")
+    parser.add_argument("--flowdock", action="store", help="Flowdock Token to post on success")
     parser.add_argument("--slackchan", action="store", default="#linux", help="Slack channel to post to on success")
     parser.add_argument("--region", action="store", default="ap-southeast-2", help="S3 bucket region")
     parser.add_argument("--snapshot", action="store", help="Snapshot to restore from (default: latest)")
