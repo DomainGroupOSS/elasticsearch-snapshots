@@ -46,6 +46,9 @@ def restore_snapshot(options):
     
                     if options.slackurl:
                         post_to_slack(url=options.slackurl, snapshot=snapshot['snapshot'], prefix=options.prefix, channel=options.slackchan)
+                    if options.flowdock:
+                        post_to_flowdock(options.flowdock, snapshot=snapshot['snapshot'], prefix=options.prefix)
+
                 except exceptions.TransportError as e:
                     logger.warning('Unable to restore snapshot "%s": %s' % (snapshot['snapshot'], e.error))
             except NameError as e:
