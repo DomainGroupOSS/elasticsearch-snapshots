@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import time, logging, argparse, json, sys
-from es_manager import ElasticsearchSnapshotManager
+from es_manager import ElasticsearchSnapshotManager, get_parser
 from elasticsearch import exceptions
 
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +19,7 @@ def take_snapshot(options):
 
     if options.indices:
         snapdef['indices'] = ','.join(options.indices)
-    
+
     try:
         sh.create(repository=options.repository, snapshot=snapshot, body=json.dumps(snapdef), wait_for_completion=options.wait, request_timeout=7200)
 
@@ -36,21 +36,8 @@ def take_snapshot(options):
         pass
 
 if __name__ == '__main__':
-    description = """This script will take a snapshot and upload to S3"""
-    parser = argparse.ArgumentParser(description=description)
-    
-    required_group = parser.add_argument_group("required arguments")
-    required_group.add_argument("--bucket", action="store", required=True, help="Bucket name where snapshots are stored")
-    required_group.add_argument("--prefix", action="store", required=True, help="Path within S3 bucket for the backups to be stored")
-
-    parser.add_argument("--repository", action="store", default="backup_to", help="Repository name to use in Elasticsearch")
-    parser.add_argument("--region", action="store", default="ap-southeast-2", help="S3 bucket region")
-    parser.add_argument("--snapshot", action="store", help="Snapshot name to use for the backup (default: all_YYYYMMDDHH)")
-    parser.add_argument("--indices", nargs="+", action="store", type=str, help="Backup specific indices (default: all)")
+    parser = get_parser("This script will take a snapshot and upload to S3")
     parser.add_argument("--wait", action="store_true", default=True, help="Wait for the backup to complete")
-    parser.add_argument("--debug", action="store_true", default=False, help="print debug information")
-    parser.add_argument("--eshost", action="store", default="localhost", help="Elasticsearch host")
-    parser.add_argument("--esport", action="store", default=9200, help="Elasticsearch port")
     parser.add_argument("--keep", action="store", default=60, help="Number of Elasticsearch snapshots to keep in S3")
 
     options = parser.parse_args()
